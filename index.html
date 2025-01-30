@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A-Frame Game</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <style>
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2em;
+            z-index: 1000;
+        }
+        #loading-dots {
+            font-size: 3em;
+        }
+        #restart-button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div>Loading<span id="loading-dots">.</span></div>
+    </div>
+    <a-scene>
+        <a-assets>
+            <img id="skyTexture" src="https://avatars.mds.yandex.net/i?id=e23c623b063b7641a24f0f40a2e17155806d07cc-10652854-images-thumbs&n=13">
+            <!-- Удалена текстура земли -->
+        </a-assets>
+        <a-sky src="#skyTexture"></a-sky>
+        <img id="boxTexture" src="box-texture.jpg">
+        <img id="sphereTexture" src="sphere-texture.jpg">
+        <!-- Заменено изображение на цвет -->
+        <a-plane src="ground.jpg" rotation="-90 0 0" width="300" height="300" repeat="10 10"></a-plane>
+        <a-camera position="0 1.6 -5" id="playerCamera">
+            <a-cursor></a-cursor>
+        </a-camera>
+        <!-- Тексты для отображения счета и таймера -->
+        <a-text id="score" value="Score: 0" position="-3 2 -5" scale="1.5 1.5 1.5" fixed-depth="true" color="#000000"></a-text>
+        <a-text id="timer" value="Time: 60" position="3 2 -5" scale="1.5 1.5 1.5" fixed-depth="true" color="#000000"></a-text>
+        <a-text id="end-message" value="Game Over!" position="0 1 -5" scale="2 2 2" visible="false" fixed-depth="true" color="#000000"></a-text>
+        <a-text id="final-score" value="Final Score: 0" position="0 0 -5" scale="1.5 1.5 1.5" visible="false" fixed-depth="true" color="#000000"></a-text>
+        <a-plane id="restart-button" position="0 -1 -5" rotation="0 0 0" width="2" height="0.5" color="#4CC3D9" visible="false">
+            <a-text value="Restart" position="0 0.25 0" scale="1 1 1" color="#000"></a-text>
+        </a-plane>
+    </a-scene>
+    <script>
+        AFRAME.registerComponent('collectible', {
+            init: function () {
+                const el = this.el;
+                el.addEventListener('click', function () {
+                    el.parentNode.removeChild(el);
+                    document.getElementById('score').setAttribute('text', 'value: Score: ' + (++document.score));
+                });
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            document.score = 0;
+            let timeLeft = 60; // 60 seconds
+            document.timer = setInterval(function () {
+                document.getElementById('timer').setAttribute('text', 'value: Time: ' + timeLeft);
+                if (--timeLeft < 0) {
+                    clearInterval(document.timer);
+                    endGame();
+                }
+            }, 1000);
+            document.getElementById('restart-button').addEventListener('click', function () {
+                restartGame();
+            });
+            // Анимация загрузки
+            let dotsCount = 1;
+            setInterval(function () {
+                const dots = document.getElementById('loading-dots');
+                if (dotsCount > 3) {
+                    dotsCount = 1;
+                    dots.textContent = '.';
+                } else {
+                    dotsCount++;
+                    dots.textContent += '.';
+                }
+            }, 500);
+            // Удаление экрана загрузки после загрузки сцены
+            const scene = document.querySelector('a-scene');
+            scene.addEventListener('loaded', function () {
+                document.getElementById('loading-screen').style.display = 'none';
+            });
+        });
+
+        function placeCollectibles(numCollectibles) {
+            const scene = document.querySelector('a-scene');
+            for (let i = 0; i < numCollectibles; i++) {
+                const x = Math.random() * 200 - 100; // Random X between -100 and 100
+                const y = 1.5;
+                const z = Math.random() * 200 - 100; // Random Z between -100 and 100
+
+                const isBox = Math.random() > 0.5;
+                if (isBox) {
+                    const box = document.createElement('a-box');
+                    box.setAttribute('position', `${x} ${y} ${z}`);
+                    box.setAttribute('rotation', '0 45 0');
+                    box.setAttribute('material', 'src: #boxTexture'); // Применяем текстур
+                    box.setAttribute('depth', '0.5');
+                    box.setAttribute('height', '0.5');
+                    box.setAttribute('width', '0.5');
+                    box.setAttribute('collectible', '');
+                    scene.appendChild(box);
+                } else {
+                    const sphere = document.createElement('a-sphere');
+                    sphere.setAttribute('position', `${x} ${y} ${z}`);
+                    sphere.setAttribute('radius', '0.5');
+                    sphere.setAttribute('material', 'src: #sphereTexture');
+                    sphere.setAttribute('collectible', '');
+                    scene.appendChild(sphere);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.score = 0;
+            let timeLeft = 60; // 60 seconds
+            document.timer = setInterval(function () {
+                document.getElementById('timer').setAttribute('value', 'Time: ' + timeLeft);
+                if (--timeLeft < 0) {
+                    clearInterval(document.timer);
+                    endGame();
+                }
+            }, 1000);
+            document.getElementById('restart-button').addEventListener('click', function () {
+                restartGame();
+            });
+            // Анимация загрузки
+            let dotsCount = 1;
+            setInterval(function () {
+                const dots = document.getElementById('loading-dots');
+                if (dotsCount > 3) {
+                    dotsCount = 1;
+                    dots.textContent = '.';
+                } else {
+                    dotsCount++;
+                    dots.textContent += '.';
+                }
+            }, 500);
+            // Удаление экрана загрузки после загрузки сцены
+            const scene = document.querySelector('a-scene');
+            scene.addEventListener('loaded', function () {
+                document.getElementById('loading-screen').style.display = 'none';
+                placeCollectibles(12); // Place 12 collectibles initially
+            });
+        });
+
+        function endGame() {
+            document.getElementById('end-message').setAttribute('visible', 'true');
+            document.getElementById('final-score').setAttribute('value', 'Final Score: ' + document.score);
+            document.getElementById('restart-button').setAttribute('visible', 'true');
+        }
+
+        function restartGame() {
+            document.score = 0;
+            document.getElementById('score').setAttribute('value', 'Score: 0');
+            document.getElementById('timer').setAttribute('value', 'Time: 60');
+            document.getElementById('end-message').setAttribute('visible', 'false');
+            document.getElementById('final-score').setAttribute('visible', 'false');
+            document.getElementById('restart-button').setAttribute('visible', 'false');
+
+            const scene = document.querySelector('a-scene');
+            scene.querySelectorAll('[collectible]').forEach(item => item.remove());
+
+            let timeLeft = 60;
+            document.timer = setInterval(function () {
+                document.getElementById('timer').setAttribute('value', 'Time: ' + timeLeft);
+                if (--timeLeft < 0) {
+                    clearInterval(document.timer);
+                    endGame();
+                }
+            }, 1000);
+
+            placeCollectibles(12); // Place 12 collectibles again
+        }
+
+        // Fix texts to camera
+        document.addEventListener('renderstart', function () {
+            const cameraEl = document.getElementById('playerCamera');
+            ['score', 'timer', 'end-message', 'final-score'].forEach(id => {
+                const textEl = document.getElementById(id);
+                textEl.object3D.position.set(
+                    textEl.object3D.position.x,
+                    textEl.object3D.position.y,
+                    textEl.object3D.position.z
+                );
+                textEl.object3D.parent = cameraEl.object3D;
+            });
+        });
+
+    </script>
+</body>
+</html>
